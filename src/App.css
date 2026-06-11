@@ -3,6 +3,17 @@
   position: relative;
 }
 
+/* Animated Luxury Lines Canvas */
+.luxury-lines-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Custom Interactive Cursor */
 .custom-cursor {
   position: fixed;
@@ -52,6 +63,7 @@
   overflow: hidden;
   padding: 0 2rem;
   background: radial-gradient(circle at center, rgba(212, 175, 55, 0.1) 0%, transparent 80%);
+  z-index: 2;
 }
 
 .hero-bg-pattern {

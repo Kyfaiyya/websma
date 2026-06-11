@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 import { X, ZoomIn, Camera } from 'lucide-react';
@@ -85,6 +85,102 @@ const PhotoCard = ({ photo, onClick, onMouseEnter, onMouseLeave }) => {
   );
 };
 
+// Animated Luxury Lines Background
+const LuxuryLines = () => {
+  const canvasRef = useRef(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let time = 0;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = document.documentElement.scrollHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const lines = Array.from({ length: 12 }, (_, i) => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      length: 300 + Math.random() * 500,
+      speed: 0.15 + Math.random() * 0.3,
+      angle: (Math.PI / 6) + Math.random() * (Math.PI / 6),
+      opacity: 0.06 + Math.random() * 0.1,
+      width: 1 + Math.random() * 2,
+      drift: Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 0.005;
+
+      lines.forEach((line) => {
+        const shimmer = Math.sin(time * 2 + line.phase) * 0.5 + 0.5;
+        const currentOpacity = line.opacity * (0.4 + shimmer * 0.6);
+
+        const dx = Math.cos(line.angle) * line.length;
+        const dy = Math.sin(line.angle) * line.length;
+        const waveOffset = Math.sin(time + line.phase) * line.drift * 40;
+
+        const x1 = line.x + waveOffset;
+        const y1 = line.y;
+        const x2 = x1 + dx;
+        const y2 = y1 + dy;
+
+        const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+        gradient.addColorStop(0, `rgba(212, 175, 55, 0)`);
+        gradient.addColorStop(0.3, `rgba(212, 175, 55, ${currentOpacity})`);
+        gradient.addColorStop(0.5, `rgba(248, 229, 160, ${currentOpacity * 1.5})`);
+        gradient.addColorStop(0.7, `rgba(212, 175, 55, ${currentOpacity})`);
+        gradient.addColorStop(1, `rgba(212, 175, 55, 0)`);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = line.width;
+        ctx.stroke();
+
+        // Move line upward slowly
+        line.y -= line.speed;
+        line.x += Math.sin(time + line.phase) * 0.2;
+
+        // Reset when off screen
+        if (line.y + dy < -50) {
+          line.y = canvas.height + 50;
+          line.x = Math.random() * canvas.width;
+        }
+      });
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = draw();
+    return cleanup;
+  }, [draw]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="luxury-lines-canvas"
+    />
+  );
+};
+
 function App() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [activeCategory, setActiveCategory] = useState('Semua Foto');
@@ -121,6 +217,9 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Animated Luxury Lines Background */}
+      <LuxuryLines />
+
       {/* Custom Cursor */}
       <motion.div 
         className={`custom-cursor ${cursorHovered ? 'hovering' : ''}`}
