@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg-color: #080808;
+  --bg-color-alt: #121212;
+  --text-primary: #f9f9f9;
+  --text-secondary: #a8a8a8;
+  --accent: #d4af37; /* Rich Gold */
+  --accent-light: #f8e5a0;
+  --accent-dark: #8c7322;
+  --card-bg: #111111;
+  --border-gold: linear-gradient(135deg, #d4af37 0%, #f8e5a0 50%, #8c7322 100%);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: none !important; /* Hide default cursor to use custom one */
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: var(--bg-color);
+  background-image: 
+    linear-gradient(rgba(8, 8, 8, 0.85), rgba(8, 8, 8, 0.85)),
+    url('/background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-left: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+
+html {
+  scroll-behavior: smooth;
+}
