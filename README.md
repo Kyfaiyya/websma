@@ -35,115 +35,248 @@ Sebuah website galeri interaktif eksklusif yang dirancang dengan tema *Black & G
 
 ## Arsitektur & Pseudocode 🧠
 
-Berikut adalah *pseudocode* tingkat tinggi yang menjelaskan bagaimana logika utama (Filter Kategori dan Efek Tilt 3D) bekerja di dalam komponen aplikasi ini.
+Berikut adalah *pseudocode* tingkat tinggi yang menjelaskan bagaimana logika utama (Sistem Filter, Efek Tilt 3D, Kursor Kustom, Canvas Background, Sistem Masuk & Interaksi Komentar/Likes) bekerja di dalam komponen aplikasi ini.
 
-### 1. Logika Komponen Utama (App) & Sistem Filter
+### 1. Logika Komponen Utama (App), Sistem Masuk, & Persistensi
 
 ```pseudocode
-// INISIALISASI DATA
-Konstanta PHOTOS = Daftar Objek Foto { id, src, title, category }
-Konstanta CATEGORIES = Daftar Unik Kategori dari PHOTOS (ditambah 'Semua Foto')
+// DATA INTI
+Konstanta PHOTOS = Daftar Objek Foto { id, src, title, category, description }
+Konstanta CATEGORIES = ['Semua Foto', ...kategori unik dari PHOTOS]
 
 // KOMPONEN UTAMA (App)
 Fungsi App():
     // State Management
-    State activeCategory = 'Semua Foto'
-    State selectedPhoto = Null (Untuk Lightbox)
-    State cursorPosition = Titik Koordinat Mouse Saat Ini
+    State visitorName = ""
+    State hasEntered = False
+    State showVisitors = False
+    State visitorsLog = []
+    State likes = {}          // Format: { photoId: jumlah_like }
+    State comments = {}       // Format: { photoId: [{ name, text }] }
+    State commentText = ""
+    State selectedPhoto = Null
+    State activeCategory = "Semua Foto"
+    State cursorHovered = False
 
-    // Effect: Update Posisi Kursor
-    Saat Mouse Bergerak (event):
-        Set cursorPosition ke event.X, event.Y
+    // Kursor Kustom (Motion Values)
+    cursorX = MotionValue(-100)
+    cursorY = MotionValue(-100)
+    springX = Spring(cursorX, damping=25, stiffness=300)
+    springY = Spring(cursorY, damping=25, stiffness=300)
 
-    // Logic: Filtering
+    // Efek Samping 1: Memuat Data dari LocalStorage pada Mount
+    EfekPadaMount():
+        Set visitorName = LocalStorage.getItem('visitorName')
+        Jika visitorName ada:
+            Set hasEntered = True
+        Set visitorsLog = LocalStorage.getItem('visitorsLog') atau []
+        Set likes = LocalStorage.getItem('photoLikes') atau {}
+        Set comments = LocalStorage.getItem('photoComments') atau {}
+
+        Saat Mouse Bergerak di Window (event):
+            Set cursorX = event.clientX
+            Set cursorY = event.clientY
+
+    // Efek Samping 2: Kunci Scroll Halaman
+    EfekPadaState(selectedPhoto, hasEntered, showVisitors):
+        Jika selectedPhoto aktif ATAU hasEntered bernilai False ATAU showVisitors aktif:
+            Kunci scroll halaman (document.body.style.overflow = 'hidden')
+        Lainnya:
+            Buka kunci scroll halaman (document.body.style.overflow = 'unset')
+
+    // Penanganan Masuk Pengunjung (Welcome Screen)
+    Fungsi handleEnter(name):
+        Set visitorName = name
+        Set hasEntered = True
+        Simpan visitorName ke LocalStorage
+        
+        logBaru = { name: name, time: waktu_sekarang_string() }
+        visitorsLogBaru = [...visitorsLog, logBaru]
+        Set visitorsLog = visitorsLogBaru
+        Simpan visitorsLogBaru ke LocalStorage
+
+    // Penanganan Keluar (Logout)
+    Fungsi handleLogout():
+        Set visitorName = ""
+        Set hasEntered = False
+        Hapus 'visitorName' dari LocalStorage
+
+    // Penanganan Suka (Like)
+    Fungsi handleLike(photoId):
+        likesBaru = objek salinan dari likes
+        likesBaru[photoId] = (likesBaru[photoId] atau 0) + 1
+        Set likes = likesBaru
+        Simpan likesBaru ke LocalStorage ('photoLikes')
+
+    // Penanganan Tambah Komentar
+    Fungsi handleAddComment(photoId):
+        Jika commentText yang di-trim kosong: kembalikan
+        komentarBaru = { name: visitorName, text: commentText.trim() }
+        daftarKomentarFoto = comments[photoId] atau []
+        commentsBaru = objek salinan dari comments dengan daftarKomentarFoto diperbarui
+        Set comments = commentsBaru
+        Simpan commentsBaru ke LocalStorage ('photoComments')
+        Set commentText = ""
+
+    // Pemfilteran Foto
     Fungsi getFilteredPhotos():
         Jika activeCategory == 'Semua Foto':
             Kembalikan semua PHOTOS
         Lainnya:
             Kembalikan PHOTOS yang memiliki category == activeCategory
-
-    filteredPhotos = getFilteredPhotos()
-
-    RENDER:
-        Tampilkan CustomCursor pada posisi (cursorPosition)
-        Tampilkan HeroSection dengan Animasi Masuk
-
-        // Bagian Galeri
-        Tampilkan TombolFilter(CATEGORIES):
-            Saat Tombol Di-klik -> Set activeCategory = Kategori Terpilih
-        
-        // Grid Galeri
-        Tampilkan GridGaleri:
-            Untuk setiap photo di dalam filteredPhotos:
-                Tampilkan Komponen PhotoCard(photo)
-
-        // Lightbox
-        Jika selectedPhoto TIDAK Null:
-            Tampilkan Modal Lightbox dengan selectedPhoto
-            Saat Tombol Close Di-klik -> Set selectedPhoto = Null
 ```
 
-### 2. Logika Komponen Kartu 3D (*3D Tilt Card*)
+### 2. Logika Komponen Selamat Datang (WelcomeScreen)
+
+```pseudocode
+// KOMPONEN WELCOME SCREEN (WelcomeScreen)
+Fungsi WelcomeScreen({ onEnter }):
+    State name = ""
+
+    Fungsi handleSubmit(event):
+        Cegah default submit browser
+        Jika name setelah di-trim tidak kosong:
+            Panggil onEnter(name)
+
+    RENDER:
+        Div Kontainer Utama (dengan transisi fade-out saat keluar):
+            Tampilkan Pola Latar Belakang (glowing lines)
+            Card Form Masuk (dengan transisi masuk scale-up & slide-up):
+                Tampilkan Ikon Kamera (Emas, Glow)
+                Tampilkan Judul "Selamat Datang" & Deskripsi
+                Form Input:
+                    Input Teks (value = name, placeholder = "Nama Anda...", autofocus)
+                    Tombol type="submit" teks "Masuk"
+```
+
+### 3. Logika Komponen Kartu 3D (*3D Tilt Card*)
 
 ```pseudocode
 // KOMPONEN KARTU FOTO (PhotoCard)
 Fungsi PhotoCard(photo):
     // Nilai rotasi fisik (Motion Values)
-    Nilai rotasiX = 0
-    Nilai rotasiY = 0
+    Nilai x = 0
+    Nilai y = 0
+    mouseXSpring = Spring(x, stiffness=300, damping=30)
+    mouseYSpring = Spring(y, stiffness=300, damping=30)
 
-    // Effect: Kalkulasi Kemiringan Kartu
+    // Transformasi posisi ke rotasi derajat (-10 sampai +10 derajat)
+    rotateX = Transform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"])
+    rotateY = Transform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"])
+
     Fungsi handleMouseMove(event):
-        Hitung Lebar dan Tinggi Kartu
-        Kalkulasi titik X (mouse) relatif terhadap pusat Kartu (persentase)
-        Kalkulasi titik Y (mouse) relatif terhadap pusat Kartu (persentase)
-        
-        // Membalik sumbu untuk efek pergerakan menentang kursor
-        Set rotasiY = persentase X * DerajatMaksimum (misal 10 derajat)
-        Set rotasiX = persentase Y * DerajatMaksimum (dibalik)
+        Hitung batas kotak elemen (getBoundingClientRect)
+        Kalkulasi mouseX, mouseY relatif terhadap kiri atas kartu
+        Kalkulasi persentase posisi mouse relatif dari pusat kartu:
+            xPct = (mouseX / lebar_kartu) - 0.5
+            yPct = (mouseY / tinggi_kartu) - 0.5
+        Set x = xPct
+        Set y = yPct
 
     Fungsi handleMouseLeave():
-        Reset rotasiX ke 0
-        Reset rotasiY ke 0
-        // (Framer Motion 'useSpring' membuat reset ini teranimasi seperti pegas)
+        Reset x ke 0
+        Reset y ke 0
+        Panggil onMouseLeave() untuk reset kursor kustom
 
     RENDER:
-        Bungkus dalam Div dengan Perspective = 1000px
-        Div Kontainer Kartu dengan Gaya:
-            transform: rotasi(rotasiX, rotasiY)
-        
-        Isi Kontainer:
-            Gambar Asli
-            Overlay Gradien + Teks (Muncul saat Hover)
+        Bungkus dalam Div dengan layout animatif (Framer Motion)
+        Div Kartu 3D dengan style: rotateX, rotateY
+            Dengarkan event: MouseMove, MouseLeave, MouseEnter, Click
+            Gambar (src = photo.src, lazy loading)
+            Overlay Gradien Hover (Zoom icon + detail judul/kategori)
 ```
 
-### 3. Logika Custom Cursor Emas
+### 4. Logika Canvas Background Garis Mewah (*Luxury Lines Background*)
+
+```pseudocode
+// KOMPONEN CANVASS BACKGROUND (LuxuryLines)
+Fungsi LuxuryLines():
+    Ref canvasRef
+
+    Fungsi draw():
+        Inisialisasi 12 objek garis acak:
+            { x, y, panjang, kecepatan, sudut, transparansi, lebar, drift, fase }
+        
+        Fungsi resizer():
+            Sesuaikan lebar canvas ke window.innerWidth
+            Sesuaikan tinggi canvas ke scrollHeight dokumen
+
+        Fungsi animate():
+            Bersihkan canvas dengan clearRect
+            Perbarui variabel waktu (time)
+            Untuk setiap garis:
+                Hitung kerlipan (shimmer) berbasis sin(time + fase)
+                Hitung pergeseran gelombang horizontal (waveOffset)
+                
+                Buat Gradien Linear 2D (ujung 1 -> tengah -> ujung 2)
+                Tambahkan titik warna emas (rgba 212, 175, 55) dengan opasitas dinamis
+                
+                Gambar path garis dari (x1, y1) ke (x2, y2)
+                Kurangi koordinat y (garis melayang ke atas) berdasarkan kecepatan
+                Tambahkan sedikit drift horizontal pada koordinat x
+                
+                Jika garis keluar di atas layar:
+                    Pindahkan koordinat y ke bawah layar
+                    Acak ulang koordinat x
+            
+            Panggil requestAnimationFrame(animate) untuk melanjutkan loop animasi
+
+    PADA MOUNT:
+        Jalankan draw() dan simpan ID animasi
+        Tambahkan event listener window 'resize' ke resizer()
+        Saat UNMOUNT:
+            Batalkan requestAnimationFrame
+            Hapus event listener window 'resize'
+```
+
+### 5. Logika Lightbox Interaktif (Komentar & Likes)
+
+```pseudocode
+// LIGHTBOX MODAL & SIDEBAR INTERAKTIF
+Fungsi Lightbox({ selectedPhoto, onClose, likes, onLike, comments, onAddComment }):
+    RENDER:
+        Div Backdrop gelap dengan blur (AnimatePresence untuk keluar masuk mulus)
+            Klik di Backdrop -> Panggil onClose()
+
+            Div Kontainer Layout Utama Lightbox (scale & spring animation):
+                Tombol Close (X) -> Panggil onClose()
+
+                // Bagian Utama: Tampilan Foto & Info Detil
+                Div Bagian Foto:
+                    Tampilkan Gambar (selectedPhoto.src)
+                    Tampilkan Detail Foto (Title, Category, Description)
+                    Tombol Suka (Like):
+                        Ikon Hati (diisi warna emas jika disukai, border emas jika belum)
+                        Jumlah Suka = likes[selectedPhoto.id] atau 0
+                        Saat Klik -> Panggil onLike(selectedPhoto.id)
+
+                // Bagian Sidebar: Daftar & Input Komentar
+                Div Bagian Sidebar:
+                    Judul "Komentar"
+                    Daftar Komentar:
+                        Untuk setiap komentar di comments[selectedPhoto.id]:
+                            Tampilkan Nama Komentator: Isi Teks Komentar
+                        Jika kosong -> Tampilkan "Belum ada komentar"
+                    Area Input Komentar:
+                        Input Teks (value = commentText, placeholder="Tambahkan komentar...")
+                        Tombol Kirim (Send) -> Panggil onAddComment(selectedPhoto.id)
+                        (Mendukung pengiriman lewat tombol 'Enter')
+```
+
+### 6. Logika Custom Cursor Emas
 
 ```pseudocode
 // SISTEM KURSOR KUSTOM
 // Terdiri dari 2 elemen: Lingkaran Luar (spring) + Titik Dalam (instant)
 
-State cursorHovered = False
-Nilai cursorX = -100   // Awal di luar layar
-Nilai cursorY = -100
-
-// Spring Config untuk efek "mengejar" yang lembut
-springX = Spring(cursorX, kekakuan=300, redaman=25)
-springY = Spring(cursorY, kekakuan=300, redaman=25)
-
-// Event Listener Global
-Saat Mouse Bergerak di Window (event):
-    Set cursorX = event.clientX
-    Set cursorY = event.clientY
-
 RENDER:
     // Lingkaran Luar — mengikuti mouse dengan delay (spring)
     Div.custom-cursor:
         posisi = (springX, springY)
-        Jika cursorHovered == True:
-            ukuran = 60px, background = emas transparan
-        Lainnya:
-            ukuran = 30px, border = emas solid
+        Kelas tambahan = 'hovering' jika cursorHovered == True
+        CSS Efek:
+            Jika hovering: ukuran = 60px, background = emas transparan (glow)
+            Jika biasa: ukuran = 30px, border = emas solid
 
     // Titik Dalam — mengikuti mouse secara instan
     Div.custom-cursor-dot:
@@ -151,151 +284,42 @@ RENDER:
         ukuran = 6px, background = emas solid
 ```
 
-### 4. Logika Hero Section & Animasi Scroll Indicator
-
-```pseudocode
-// HERO SECTION
-RENDER HeroSection:
-    // Layer 1: Pola Geometris SVG (opacity rendah)
-    Div.hero-bg-pattern:
-        background = Pola SVG diagonal emas (opacity 3%)
-
-    // Layer 2: Konten Utama dengan Animasi Masuk
-    motion.Div.hero-content:
-        animasi_awal = { opacity: 0, y: +50px }
-        animasi_akhir = { opacity: 1, y: 0 }
-        durasi = 1.5 detik, easing = easeOut
-
-        Tampilkan Ikon Kamera (warna emas, glow effect)
-        Tampilkan Judul "MEMORI LENSA" (kata "Lensa" = gradient emas)
-        Tampilkan Subtitle
-
-    // Layer 3: Indikator Scroll (muncul setelah delay)
-    motion.Div.scroll-indicator:
-        animasi_muncul = delay 1.5 detik
-
-        Teks "JELAJAHI"
-        motion.Div.scroll-line:
-            // Animasi loop tak terbatas
-            LOOP Selamanya:
-                tinggi: 0px → 60px (fade in)
-                posisi Y: 0 → +60px (turun)
-                opacity: 0 → 1 → 0 (fade out)
-                durasi = 2 detik, easing = easeInOut
-```
-
-### 5. Logika Lightbox (Modal Layar Penuh)
-
-```pseudocode
-// LIGHTBOX MODAL
-// Dipicu saat pengguna mengklik salah satu PhotoCard
-
-Saat foto diklik:
-    Set selectedPhoto = objek foto yang diklik
-    Set document.body.overflow = 'hidden'  // Kunci scroll halaman
-
-Saat selectedPhoto TIDAK Null:
-    RENDER AnimatePresence:
-        // Backdrop gelap dengan blur
-        motion.Div.lightbox:
-            animasi_masuk  = { opacity: 0 → 1 }
-            animasi_keluar = { opacity: 1 → 0 }
-            onClick = tutup lightbox
-
-            // Konten Foto
-            motion.Div.lightbox-content:
-                animasi_masuk  = { scale: 0.9, opacity: 0, y: +20 }
-                animasi_akhir  = { scale: 1.0, opacity: 1, y: 0 }
-                tipe_animasi   = spring (damping=25, stiffness=300)
-                onClick        = stopPropagation  // Cegah penutupan
-
-                // Tombol Close (X) — pojok kanan atas
-                Button.close-btn:
-                    onClick = Set selectedPhoto = Null
-                    hover   = rotate(90deg), warna terbalik
-
-                // Gambar Resolusi Penuh
-                Img.lightbox-img:
-                    src = selectedPhoto.src
-                    max-height = 75vh, object-fit = contain
-
-                // Info Foto (muncul dengan delay)
-                motion.Div.lightbox-info:
-                    animasi = { opacity: 0→1, y: 10→0, delay: 0.3s }
-                    Tampilkan selectedPhoto.title (font Cinzel, emas)
-                    Tampilkan selectedPhoto.category (huruf kapital)
-
-Saat lightbox ditutup:
-    Set selectedPhoto = Null
-    Set document.body.overflow = 'unset'  // Buka kunci scroll
-```
-
-### 6. Logika Bento-Box Grid Layout (CSS)
+### 7. Logika Bento-Box Grid Layout (CSS)
 
 ```pseudocode
 // BENTO-BOX GRID — Asymmetrical Layout via CSS Grid
 
 .custom-gallery-grid:
     tipe_layout    = CSS Grid
-    kolom          = repeat(auto-fill, min 320px, max 1fr)
+    kolom          = repeat(auto-fill, minmax(320px, 1fr))
     baris_otomatis = tinggi 350px per baris
     jarak_antar    = 30px
 
-// ATURAN UKURAN DINAMIS (hanya layar >= 1024px):
+// ATURAN UKURAN DINAMIS (menggunakan selektor :nth-child):
 Untuk setiap kartu ke-N dalam grid:
     Jika N mod 4 == 1 (kartu ke-1, 5, 9, ...):
-        → Perbesar: span 2 kolom DAN span 2 baris (700px tinggi)
+        → Perbesar: span 2 kolom DAN span 2 baris (tinggi sekitar 730px)
         → Menjadi "Foto Unggulan" berukuran 4x lipat
     
     Jika N mod 7 == 0 (kartu ke-7, 14, ...):
-        → Lebarkan: span 2 kolom (tetap 1 baris)
+        → Lebarkan: span 2 kolom (tetap 1 baris, tinggi 350px)
         → Menjadi "Foto Panoramik" berukuran 2x lipat
-
-// EFEK VISUAL KARTU
-Setiap .photo-card:
-    Default:
-        gambar = grayscale 80%, kontras 1.1
-        border = emas transparan (opacity 15%)
-        bayangan = hitam pekat (35px blur)
-    
-    Saat Hover:
-        gambar → grayscale 0% (warna penuh) + scale 1.05x
-        border emas bercahaya muncul (gradient 135°)
-        overlay teks naik dari bawah (translateY: 20→0)
 ```
 
-### 7. Logika Styling Tema Luxury (CSS Variables)
+### 8. Logika Styling Tema Luxury (CSS Variables)
 
-```pseudocode
-// SISTEM TEMA BLACK & GOLD
-
-VARIABEL GLOBAL (:root):
-    --bg-color      = #080808    // Hitam sangat gelap
-    --bg-color-alt  = #121212    // Abu gelap (untuk kontras)
-    --text-primary  = #f9f9f9   // Putih lembut
-    --text-secondary= #a8a8a8   // Abu terang
-    --accent        = #d4af37   // Emas murni (Rich Gold)
-    --accent-light  = #f8e5a0   // Emas terang (highlight)
-    --accent-dark   = #8c7322   // Emas gelap (shadow)
-    --card-bg       = #111111   // Latar kartu
-    --border-gold   = gradient(135°, emas → terang → gelap)
-
-LATAR BELAKANG HALAMAN (body):
-    Layer 1 = Overlay gelap semi-transparan (opacity 85%)
-    Layer 2 = Gambar background.png (cover, fixed, centered)
-    → Efek parallax: gambar diam saat halaman di-scroll
-
-TIPOGRAFI:
-    Judul (h1-h6) = Font 'Cinzel' (Serif klasik, tebal 700)
-    Body text     = Font 'Montserrat' (Sans-serif modern, tipis 300-600)
-
-SCROLLBAR KUSTOM:
-    Track  = hitam + garis emas tipis di kiri
-    Thumb  = emas gelap → emas terang saat hover
-
-KURSOR:
-    Kursor default browser = disembunyikan (cursor: none)
-    Diganti dengan elemen React kustom (lihat Pseudocode #3)
+```css
+/* SISTEM VARIABEL CSS GLOBAL TEMA BLACK & GOLD */
+:root {
+  --bg-color: #080808;         /* Hitam sangat gelap */
+  --bg-color-alt: #121212;     /* Latar header/modal kontras */
+  --text-primary: #f9f9f9;     /* Putih lembut */
+  --text-secondary: #a8a8a8;   /* Abu-abu terang */
+  --accent: #d4af37;           /* Rich Gold */
+  --accent-light: #f8e5a0;     /* Emas terang bercahaya */
+  --accent-dark: #8c7322;      /* Emas gelap bayangan */
+  --card-bg: #111111;          /* Latar belakang bento card */
+}
 ```
 
 ---
