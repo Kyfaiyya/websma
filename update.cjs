@@ -1,24 +1,32 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const appJsxPath = path.join(__dirname, 'src', 'App.jsx');
+const content = fs.readFileSync(appJsxPath, 'utf8');
+
+const photoCardStart = content.indexOf('// 3D Tilt Card Component');
+const luxuryLinesStart = content.indexOf('// Animated Luxury Lines Background');
+const appStart = content.indexOf('function App() {');
+
+const photoCardCode = content.substring(photoCardStart, luxuryLinesStart);
+const luxuryLinesCode = content.substring(luxuryLinesStart, appStart);
+
+const newAppJsx = `import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { X, ZoomIn, Camera, Heart, Users, Send, LogOut } from 'lucide-react';
+import { X, ZoomIn, Camera, Heart, Users, Send } from 'lucide-react';
 import './App.css';
 
 const photos = [
-  { id: 1, src: '/fotokegiatan/Artur Project.jpeg', title: 'Artur Project', category: 'Proyek & Event', description: 'Pertunjukan seni budaya daerah berupa ketoprak, gamelan, dan tari saman yang dapat diikuti dan ditonton oleh siswa SMA IT Nur Hidayah serta masyarakat sekitar sebagai salah satu bentuk pelestarian budaya.' },
-  { id: 2, src: '/fotokegiatan/Bukber X-6.jpeg', title: 'Buka Bersama X-6', category: 'Kelas & Outdoor', description: 'Kegiatan kumpul kelas X-6 untuk menikmati hidangan berbuka puasa bersama dan mempererat silahturahmi.' },
-  { id: 3, src: '/fotokegiatan/Exprada.jpeg', title: 'Exprada', category: 'Proyek & Event', description: 'Eksprada merupakan kegiatan pengembaraan dan perkemahan untuk siswa/i kelas X SMAIT Nur Hidayah.' },
-  { id: 4, src: '/fotokegiatan/Felisia.jpeg', title: 'Felisia', category: 'Kelas & Outdoor', description: 'Kegiatan ini berupa seminar bedah buku bersama penulis buku yang disertai pemaparan ide dan pengalaman menulis.' },
-  { id: 5, src: '/fotokegiatan/Inagurasi angkatan 18 (2).jpeg', title: 'Inagurasi Angkatan 18', category: 'Angkatan 18', description: 'Inagurasi merupakan acara tahunan yang menjadi ajang penyambutan resmi bagi siswa-siswi kelas 10 sebagai bagian dari keluarga besar SMA IT Nur Hidayah. Acara ini akan diisi dengan berbagai penampilan kreatif dari setiap kelas, rangkaian kegiatan kebersamaan, serta pesan-pesan motivasi untuk menumbuhkan semangat belajar para siswa.' },
-  { id: 6, src: '/fotokegiatan/Mandala Charity Day.jpeg', title: 'Mandala Charity', category: 'Proyek & Event', description: 'Mandala Charity Day merupakan kegiatan yang dilaksanakan melalui kolaborasi dengan komunitas sosial dan berfokus pada kegiatan kemanusiaan. Rangkaian acara ini mencakup kegiatan aktivitas anak sebagai wadah untuk menyalurkan potensi, di lanjutkan dengan belanja bersama.' },
-  { id: 7, src: '/fotokegiatan/Outbound Tarbawi.jpeg', title: 'Outbound Tarbawi', category: 'Kelas & Outdoor', description: 'Kegiatan edukatif dan rekreatif di alam terbuka untuk melatih kepemimpinan, kekompakan, dan kemandirian siswa.' },
-  { id: 8, src: '/fotokegiatan/Pramuka Mingguan.jpeg', title: 'Pramuka Mingguan', category: 'Ekstrakurikuler', description: 'Pramuka mingguan adalah kegiatan ekstrakurikuler rutin yang bertujuan membentuk karakter siswa melalui pendidikan kepanduan di luar jam sekolah. Kegiatan ini dilaksanakan setiap hari Sabtu pagi.' },
-  { id: 9, src: '/fotokegiatan/Teachers Day.jpeg', title: 'Hari Guru', category: 'Kelas & Outdoor', description: "Teacher's Day atau Hari Guru adalah hari peringatan khusus untuk menunjukkan apresiasi, penghargaan, dan terima kasih kepada para pendidik atas dedikasi mereka." },
-  { id: 10, src: '/fotokegiatan/Teater Chroma.jpeg', title: 'Teater Chroma', category: 'Ekstrakurikuler', description: 'Penampilan berupa drama atau teater dari setiap kelas XI yang ditonton oleh seluruh warga SMA IT Nur Hidayah dan pihak luar.' },
-  { id: 11, src: '/fotokegiatan/bukber isc.jpeg', title: 'Buka Bersama ISC', category: 'Kelas & Outdoor', description: 'Kegiatan berkumpul bersama kelompok ISC untuk menikmati hidangan berbuka puasa bersama dan mempererat silahturahmi.' },
-  { id: 12, src: '/fotokegiatan/eksprada2.jpeg', title: 'Exprada 2', category: 'Proyek & Event', description: 'Eksprada merupakan kegiatan pengembaraan dan perkemahan untuk siswa/i kelas X SMAIT Nur Hidayah.' },
-  { id: 13, src: '/fotokegiatan/eksprada3.jpeg', title: 'Exprada 3', category: 'Proyek & Event', description: 'Eksprada merupakan kegiatan pengembaraan dan perkemahan untuk siswa/i kelas X SMAIT Nur Hidayah.' },
-  { id: 14, src: '/fotokegiatan/hari santri.jpeg', title: 'Hari Santri', category: 'Kelas & Outdoor', description: 'Peringatan setiap tanggal 22 Oktober untuk mengenang peran besar kiai dan santri dalam memperjuangkan kemerdekaan melalui Resolusi Jihad 1945.' },
-  { id: 15, src: '/fotokegiatan/membatik.jpeg', title: 'Membatik Kauman', category: 'Kelas & Outdoor', description: 'Merupakan kegiatan yang kami lakukan untuk mengerjakan tugas Pendidikan Pancasila.' },
+  { id: 1, src: '/fotokegiatan/Artur Project.jpeg', title: 'Artur Project', category: 'Proyek & Event' },
+  { id: 2, src: '/fotokegiatan/Bukber X-6.jpeg', title: 'Buka Bersama X-6', category: 'Kelas & Outdoor' },
+  { id: 3, src: '/fotokegiatan/Exprada.jpeg', title: 'Exprada', category: 'Proyek & Event' },
+  { id: 4, src: '/fotokegiatan/Felisia.jpeg', title: 'Felisia', category: 'Kelas & Outdoor' },
+  { id: 5, src: '/fotokegiatan/Inagurasi angkatan 18 (2).jpeg', title: 'Inagurasi Angkatan 18', category: 'Angkatan 18' },
+  { id: 6, src: '/fotokegiatan/Mandala Charity Day.jpeg', title: 'Mandala Charity', category: 'Proyek & Event' },
+  { id: 7, src: '/fotokegiatan/Outbound Tarbawi.jpeg', title: 'Outbound Tarbawi', category: 'Kelas & Outdoor' },
+  { id: 8, src: '/fotokegiatan/Pramuka Mingguan.jpeg', title: 'Pramuka Mingguan', category: 'Ekstrakurikuler' },
+  { id: 9, src: '/fotokegiatan/Teachers Day.jpeg', title: 'Hari Guru', category: 'Kelas & Outdoor' },
+  { id: 10, src: '/fotokegiatan/Teater Chroma.jpeg', title: 'Teater Chroma', category: 'Ekstrakurikuler' },
 ];
 
 const categories = ['Semua Foto', ...new Set(photos.map(p => p.category))];
@@ -66,169 +74,9 @@ const WelcomeScreen = ({ onEnter }) => {
   );
 };
 
-// 3D Tilt Card Component
-const PhotoCard = ({ photo, onClick, onMouseEnter, onMouseLeave }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+${photoCardCode}
 
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 });
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-
-    x.set(xPct);
-    y.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-    if(onMouseLeave) onMouseLeave();
-  };
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.4 }}
-      className="photo-card-wrapper"
-    >
-      <motion.div
-        className="photo-card"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onMouseEnter={onMouseEnter}
-        onClick={() => onClick(photo)}
-        style={{
-          rotateX,
-          rotateY,
-        }}
-      >
-        <img src={photo.src} alt={photo.title} loading="lazy" />
-        <div className="photo-overlay">
-          <div className="photo-info">
-            <h3>{photo.title}</h3>
-            <p>{photo.category}</p>
-          </div>
-          <ZoomIn color="#d4af37" size={24} />
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-
-
-// Animated Luxury Lines Background
-const LuxuryLines = () => {
-  const canvasRef = useRef(null);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animationId;
-    let time = 0;
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = document.documentElement.scrollHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const lines = Array.from({ length: 12 }, (_, i) => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      length: 300 + Math.random() * 500,
-      speed: 0.15 + Math.random() * 0.3,
-      angle: (Math.PI / 6) + Math.random() * (Math.PI / 6),
-      opacity: 0.06 + Math.random() * 0.1,
-      width: 1 + Math.random() * 2,
-      drift: Math.random() * 0.5,
-      phase: Math.random() * Math.PI * 2,
-    }));
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      time += 0.005;
-
-      lines.forEach((line) => {
-        const shimmer = Math.sin(time * 2 + line.phase) * 0.5 + 0.5;
-        const currentOpacity = line.opacity * (0.4 + shimmer * 0.6);
-
-        const dx = Math.cos(line.angle) * line.length;
-        const dy = Math.sin(line.angle) * line.length;
-        const waveOffset = Math.sin(time + line.phase) * line.drift * 40;
-
-        const x1 = line.x + waveOffset;
-        const y1 = line.y;
-        const x2 = x1 + dx;
-        const y2 = y1 + dy;
-
-        const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
-        gradient.addColorStop(0, `rgba(212, 175, 55, 0)`);
-        gradient.addColorStop(0.3, `rgba(212, 175, 55, ${currentOpacity})`);
-        gradient.addColorStop(0.5, `rgba(248, 229, 160, ${currentOpacity * 1.5})`);
-        gradient.addColorStop(0.7, `rgba(212, 175, 55, ${currentOpacity})`);
-        gradient.addColorStop(1, `rgba(212, 175, 55, 0)`);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.strokeStyle = gradient;
-        ctx.lineWidth = line.width;
-        ctx.stroke();
-
-        // Move line upward slowly
-        line.y -= line.speed;
-        line.x += Math.sin(time + line.phase) * 0.2;
-
-        // Reset when off screen
-        if (line.y + dy < -50) {
-          line.y = canvas.height + 50;
-          line.x = Math.random() * canvas.width;
-        }
-      });
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const cleanup = draw();
-    return cleanup;
-  }, [draw]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="luxury-lines-canvas"
-    />
-  );
-};
-
-
+${luxuryLinesCode}
 
 function App() {
   const [visitorName, setVisitorName] = useState('');
@@ -290,12 +138,6 @@ function App() {
     localStorage.setItem('visitorsLog', JSON.stringify(newLog));
   };
 
-  const handleLogout = () => {
-    setVisitorName('');
-    setHasEntered(false);
-    localStorage.removeItem('visitorName');
-  };
-
   const handleLike = (photoId) => {
     const newLikes = { ...likes, [photoId]: (likes[photoId] || 0) + 1 };
     setLikes(newLikes);
@@ -321,7 +163,7 @@ function App() {
       <LuxuryLines />
 
       <motion.div 
-        className={`custom-cursor ${cursorHovered ? 'hovering' : ''}`}
+        className={\`custom-cursor \${cursorHovered ? 'hovering' : ''}\`}
         style={{ x: cursorXSpring, y: cursorYSpring }}
       />
       <motion.div 
@@ -341,26 +183,15 @@ function App() {
             <div className="user-greeting">
               Halo, <span>{visitorName}</span>
             </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button 
-                className="visitors-btn" 
-                onClick={() => setShowVisitors(true)}
-                onMouseEnter={() => setCursorHovered(true)}
-                onMouseLeave={() => setCursorHovered(false)}
-              >
-                <Users size={18} />
-                <span>Log Pengunjung</span>
-              </button>
-              <button 
-                className="visitors-btn logout-btn" 
-                onClick={handleLogout}
-                onMouseEnter={() => setCursorHovered(true)}
-                onMouseLeave={() => setCursorHovered(false)}
-              >
-                <LogOut size={18} />
-                <span>Keluar</span>
-              </button>
-            </div>
+            <button 
+              className="visitors-btn" 
+              onClick={() => setShowVisitors(true)}
+              onMouseEnter={() => setCursorHovered(true)}
+              onMouseLeave={() => setCursorHovered(false)}
+            >
+              <Users size={18} />
+              <span>Log Pengunjung</span>
+            </button>
           </header>
 
           <section className="hero">
@@ -417,7 +248,7 @@ function App() {
               {categories.map((category) => (
                 <button
                   key={category}
-                  className={`filter-btn ${activeCategory === category ? 'active' : ''}`}
+                  className={\`filter-btn \${activeCategory === category ? 'active' : ''}\`}
                   onClick={() => setActiveCategory(category)}
                   onMouseEnter={() => setCursorHovered(true)}
                   onMouseLeave={() => setCursorHovered(false)}
@@ -514,9 +345,8 @@ function App() {
                       className="lightbox-img" 
                     />
                     <div className="lightbox-info">
-                      <h3 style={{fontFamily: 'Cinzel, serif', color: '#d4af37', fontSize: '1.5rem', marginBottom: '0.5rem'}}>{selectedPhoto.title}</h3>
-                      <p style={{color: '#a8a8a8', fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem'}}>{selectedPhoto.category}</p>
-                      <p style={{color: '#f9f9f9', fontSize: '0.9rem', lineHeight: '1.6', maxWidth: '90%', margin: '0 auto 1.5rem', textAlign: 'center'}}>{selectedPhoto.description}</p>
+                      <h3 style={{fontFamily: 'Cinzel, serif', color: '#d4af37', fontSize: '1.5rem'}}>{selectedPhoto.title}</h3>
+                      <p style={{color: '#a8a8a8', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase'}}>{selectedPhoto.category}</p>
                       <button 
                         className="like-btn" 
                         onClick={() => handleLike(selectedPhoto.id)}
@@ -575,3 +405,336 @@ function App() {
 }
 
 export default App;
+`;
+
+fs.writeFileSync(appJsxPath, newAppJsx);
+
+const appCssPath = path.join(__dirname, 'src', 'App.css');
+const newCss = `
+/* New Styles */
+.welcome-screen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--bg-color);
+  background-image: 
+    linear-gradient(rgba(8, 8, 8, 0.9), rgba(8, 8, 8, 0.9)),
+    url('/background.png');
+  background-size: cover;
+  background-position: center;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.welcome-card {
+  background: var(--card-bg);
+  padding: 3rem;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-input {
+  width: 100%;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--text-primary);
+  font-family: 'Montserrat', sans-serif;
+  border-radius: 4px;
+  outline: none;
+  font-size: 1rem;
+}
+
+.welcome-input:focus {
+  border-color: var(--accent);
+}
+
+.welcome-btn {
+  width: 100%;
+  padding: 1rem;
+  background: var(--accent);
+  color: #000;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  cursor: none;
+}
+
+.welcome-btn:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+}
+
+/* App Header */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: linear-gradient(to bottom, rgba(8, 8, 8, 0.9) 0%, transparent 100%);
+  pointer-events: auto;
+}
+
+.user-greeting {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.user-greeting span {
+  color: var(--accent);
+}
+
+.visitors-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.visitors-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* Visitors Modal */
+.visitors-modal {
+  background: var(--bg-color-alt);
+  border: 1px solid var(--accent);
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.visitors-modal h3 {
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+}
+
+.visitors-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 10px;
+}
+
+.visitor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.visitor-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.visitor-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Lightbox Layout for Comments */
+.lightbox-layout {
+  display: flex;
+  background: var(--bg-color-alt);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.1);
+  width: 95vw;
+  max-width: 1200px;
+  height: 85vh;
+  position: relative;
+}
+
+.lightbox-main {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #050505;
+  position: relative;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.lightbox-info {
+  margin-top: 1.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.like-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.lightbox-sidebar {
+  flex: 1;
+  min-width: 320px;
+  border-left: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+}
+
+.lightbox-sidebar h4 {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--accent);
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.comment-item {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 2px solid var(--accent);
+}
+
+.comment-item strong {
+  color: var(--accent-light);
+  margin-right: 0.5rem;
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.comment-input-area {
+  padding: 1rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-input-area input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--text-primary);
+  padding: 0.8rem;
+  border-radius: 4px;
+  outline: none;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.comment-input-area input:focus {
+  border-color: var(--accent);
+}
+
+.comment-input-area button {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  padding: 0.8rem 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.comment-input-area button:hover {
+  background: var(--accent-light);
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .lightbox-layout {
+    flex-direction: column;
+    height: 90vh;
+  }
+  .lightbox-main {
+    flex: 1;
+    min-height: 50vh;
+  }
+  .lightbox-sidebar {
+    border-left: none;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    flex: 1;
+  }
+  .welcome-card {
+    padding: 2rem;
+  }
+}
+`;
+
+let cssContent = fs.readFileSync(appCssPath, 'utf8');
+fs.writeFileSync(appCssPath, cssContent + newCss);
+
+console.log('Update successful');
